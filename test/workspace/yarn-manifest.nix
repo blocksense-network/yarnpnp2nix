@@ -1095,7 +1095,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-android-arm-0.15.10-cb21b3083b";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch32);
       flatName = "android-arm";
@@ -1108,7 +1107,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-loong64-0.15.10-e8e3f91e81";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (false);
       flatName = "linux-loong64";
@@ -1681,7 +1679,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-android-arm-eabi-12.3.1-27d8113023";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch32);
       flatName = "swc-android-arm-eabi";
@@ -1694,7 +1691,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-android-arm64-12.3.1-4cb31f4a92";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch64);
       flatName = "swc-android-arm64";
@@ -1707,9 +1703,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-darwin-arm64-12.3.1-de8a19538c";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-4xsDS4PrKPG3+qZC1clxo6bpG69DxeHt7FG34kOwQVDtZUZwp/W8UdBWz3FOTzbNiIyF7OBv+KETYb1MU+Umug==";
-      };
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isDarwin) && (stdenv.isAarch64);
       flatName = "swc-darwin-arm64";
@@ -1722,7 +1715,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-darwin-x64-12.3.1-94c79d9eeb";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isDarwin) && (stdenv.isx86_64);
       flatName = "swc-darwin-x64";
@@ -1735,7 +1727,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-freebsd-x64-12.3.1-e70485dff7";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "swc-freebsd-x64";
@@ -1748,7 +1739,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-linux-arm-gnueabihf-12.3.1-ae166387a2";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isAarch32);
       flatName = "swc-linux-arm-gnueabihf";
@@ -1761,7 +1751,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-linux-arm64-gnu-12.3.1-97fa91b813";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isAarch64);
       flatName = "swc-linux-arm64-gnu";
@@ -1774,7 +1763,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-linux-arm64-musl-12.3.1-9fa31b826f";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isAarch64) && (false);
       flatName = "swc-linux-arm64-musl";
@@ -1787,9 +1775,7 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-linux-x64-gnu-12.3.1-1a0f94dd1d";
-      outputHashByPlatform = {
-        "x86_64-linux" = "sha512-4yXKf3VLGHtR4xsNYbqpxGAmthsENlwX8eZjXHd5PxADNws8MwkdcwLspDxifrAdcuO68WVM3UiTNUuZN/Vt0A==";
-      };
+      outputHash = "0604607e9667494f251b82bb7ba06c86a86a2832d948156c0e68ed43601cf64fd9bbf303ff14e8f77037dc8952eb9f7a8f50dbe03e811d1e3501d299ce200e0e";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isx86_64);
       flatName = "swc-linux-x64-gnu";
@@ -1802,7 +1788,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-linux-x64-musl-12.3.1-ea79024436";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isx86_64) && (false);
       flatName = "swc-linux-x64-musl";
@@ -1815,7 +1800,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-win32-arm64-msvc-12.3.1-2856011871";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch64);
       flatName = "swc-win32-arm64-msvc";
@@ -1828,7 +1812,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-win32-ia32-msvc-12.3.1-46b6193df8";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isi686);
       flatName = "swc-win32-ia32-msvc";
@@ -1841,7 +1824,6 @@ let
       reference = "npm:12.3.1";
       linkType = "HARD";
       outputName = "next-swc-win32-x64-msvc-12.3.1-07986b4667";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "swc-win32-x64-msvc";
@@ -3459,10 +3441,7 @@ let
       reference = "npm:2.10.1";
       linkType = "HARD";
       outputName = "canvas-2.10.1-2f4cd381e7";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-kEF6lP+c/noAkYxkZ2NW9FgGz9nd92xp5L2PtDuf0DKjH4kCdTqmq8DeWtuBSq42dMyKDf+n9Ehiwyv6qHkbLA==";
-        "x86_64-linux" = "sha512-OFfqB7k0QX5p4TiVlulGIknOYE4t0y7KdwK3hRfNTBYzlciQ4lYP0CKhYeLQmGm1Kh6aCPOXJCHaJOA+7hw8Ug==";
-      };
+      outputHash = "eac07e4751e6c8caefb19cecc03fb80fbba449197156a75ad4b16811306f043c2f6100551b7d753ac920c86a69160d3949e6f18ff4a85cb9c45d799b4c39608d";
       shouldBeUnplugged = true;
       flatName = "canvas";
       languageName = "node";
@@ -4248,7 +4227,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-android-64-0.15.10-3d2eb29a4e";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "esbuild-android-64";
@@ -4261,7 +4239,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-android-arm64-0.15.10-24c606b8d0";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch64);
       flatName = "esbuild-android-arm64";
@@ -4274,7 +4251,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-darwin-64-0.15.10-50d06034ab";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isDarwin) && (stdenv.isx86_64);
       flatName = "esbuild-darwin-64";
@@ -4287,9 +4263,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-darwin-arm64-0.15.10-11087d1896";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-Y5+ADVjp0WbzDUXRVintz+Tk0Wf3aUCzQvA1zWSxGlOrsttAkAJdt069ERiFN3EmICIu74R566OiplD6bRl/fA==";
-      };
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isDarwin) && (stdenv.isAarch64);
       flatName = "esbuild-darwin-arm64";
@@ -4302,7 +4275,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-freebsd-64-0.15.10-90d230ac5d";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "esbuild-freebsd-64";
@@ -4315,7 +4287,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-freebsd-arm64-0.15.10-b6cc16b1bc";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch64);
       flatName = "esbuild-freebsd-arm64";
@@ -4328,7 +4299,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-32-0.15.10-251b6c8933";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isi686);
       flatName = "esbuild-linux-32";
@@ -4341,9 +4311,7 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-64-0.15.10-702e43a31d";
-      outputHashByPlatform = {
-        "x86_64-linux" = "sha512-H6P3xJuvxQ6JN1xAWDjZGRlHCgBju4iJZlvlhrUnDsqD1ZLZhd7gKYuN+ALWIRW+zxVqYAN9rLTKKZE5SECjXg==";
-      };
+      outputHash = "5c3accdf8413a90999163e351257737dd70f3b9ad16f8eec3800d12cad7d80d4cd91aa3f38fa148a9c6aff2ac56116ea1ab55472bcaa0a1c610de253222056e9";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isx86_64);
       flatName = "esbuild-linux-64";
@@ -4356,7 +4324,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-arm-0.15.10-1b6a33f0c3";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isAarch32);
       flatName = "esbuild-linux-arm";
@@ -4369,7 +4336,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-arm64-0.15.10-5e6fd620fd";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (stdenv.isAarch64);
       flatName = "esbuild-linux-arm64";
@@ -4382,7 +4348,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-mips64le-0.15.10-eeae8b41d6";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (false);
       flatName = "esbuild-linux-mips64le";
@@ -4395,7 +4360,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-ppc64le-0.15.10-7294f87763";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (false);
       flatName = "esbuild-linux-ppc64le";
@@ -4408,7 +4372,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-riscv64-0.15.10-02fe2af546";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (false);
       flatName = "esbuild-linux-riscv64";
@@ -4421,7 +4384,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-linux-s390x-0.15.10-5d42e10d8b";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isLinux) && (false);
       flatName = "esbuild-linux-s390x";
@@ -4434,7 +4396,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-netbsd-64-0.15.10-6d485377ac";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "esbuild-netbsd-64";
@@ -4447,7 +4408,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-openbsd-64-0.15.10-bd10ce1b53";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "esbuild-openbsd-64";
@@ -4460,7 +4420,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-sunos-64-0.15.10-577a77fb30";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "esbuild-sunos-64";
@@ -4473,7 +4432,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-windows-32-0.15.10-c98220b83e";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isi686);
       flatName = "esbuild-windows-32";
@@ -4486,7 +4444,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-windows-64-0.15.10-a7f3d5a0ba";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isx86_64);
       flatName = "esbuild-windows-64";
@@ -4499,7 +4456,6 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-windows-arm64-0.15.10-f8b613a69b";
-      outputHash = "";
       shouldBeUnplugged = true;
       installCondition = stdenv: (false) && (stdenv.isAarch64);
       flatName = "esbuild-windows-arm64";
@@ -4512,10 +4468,7 @@ let
       reference = "npm:0.15.10";
       linkType = "HARD";
       outputName = "esbuild-0.15.10-cd7bf58045";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-1vaO639lFTNMppXf76TOY6NEbmVUkAiCNlYM/f3Q7Plf1TIGnyKgfHK7YiCwS8wtLYzzvrEp2JyIewZfhlu2xw==";
-        "x86_64-linux" = "sha512-1vaO639lFTNMppXf76TOY6NEbmVUkAiCNlYM/f3Q7Plf1TIGnyKgfHK7YiCwS8wtLYzzvrEp2JyIewZfhlu2xw==";
-      };
+      outputHash = "84223305fec7e29de19f1065ddac4e3fc6ea022e12e50f2e5a29e597059e5778b42d310324b3914de66832b6adc31c95c6b6b2733fbd2649f0ddaa8b93c8328c";
       shouldBeUnplugged = true;
       flatName = "esbuild";
       languageName = "node";
@@ -4916,9 +4869,6 @@ let
       reference = "patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1";
       linkType = "HARD";
       outputName = "fsevents-2.3.2-19706e7e35";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-uka9eemEm6sAGeKXHGrM/cfX65Rd2RWVeApfmeZrgeCG7giNVo2HDHPIev7RIMz07ObyqlBN+EdFaJ8Q9JsnQA==";
-      };
       shouldBeUnplugged = true;
       installCondition = stdenv: (stdenv.isDarwin);
       flatName = "fsevents";
@@ -7187,10 +7137,7 @@ let
       reference = "npm:2.17.0";
       linkType = "HARD";
       outputName = "nan-2.17.0-bf36a21d6f";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-vaHklwbCugGO1eXXYwW7TmwZUx06adQReESZw4KTdbNPoP0ioUIBnAjBWaWPrhxQEE/czsGxJh504Ce/+/dHyA==";
-        "x86_64-linux" = "sha512-vaHklwbCugGO1eXXYwW7TmwZUx06adQReESZw4KTdbNPoP0ioUIBnAjBWaWPrhxQEE/czsGxJh504Ce/+/dHyA==";
-      };
+      outputHash = "d424a730ee926fd928545c29ba19609bc1af03f8210c4465c825ba87070b83c546da2964a14d6acdacca847798184f48d5b8585f061dcb59459b300f2aff09c8";
       shouldBeUnplugged = true;
       flatName = "nan";
       languageName = "node";
@@ -7360,10 +7307,7 @@ let
       reference = "npm:5.0.0";
       linkType = "HARD";
       outputName = "node-addon-api-5.0.0-c0def7fecf";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-Uw8BXOHMOmRcUkY4xfrITrenvBWpuTVhA33ECB4RkI8R1USvopS9t8XRjrqUKtlQ2L9qoa5KzBbTpWtJDnQwUg==";
-        "x86_64-linux" = "sha512-Uw8BXOHMOmRcUkY4xfrITrenvBWpuTVhA33ECB4RkI8R1USvopS9t8XRjrqUKtlQ2L9qoa5KzBbTpWtJDnQwUg==";
-      };
+      outputHash = "dd981b956d93d0a3b46f028776b3fa9e7ac88830de46f0f7f691e3bbea9b53f0d47e44986c2d8a7d3a016fea3772492eafcc626c23bec60b443508efcfec5f10";
       shouldBeUnplugged = true;
       flatName = "node-addon-api";
       languageName = "node";
@@ -7422,10 +7366,7 @@ let
       reference = "npm:9.3.0";
       linkType = "HARD";
       outputName = "node-gyp-9.3.0-21c41a4dfd";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-3Ct9L1Ijy3qX2zq3Rf+lGjHMbrK8SUa2jQCdWB8RCo4pktb97WJ1JkxhJdC7tPSLlgQ2htJIH8wyKCB6bgMR6g==";
-        "x86_64-linux" = "sha512-3Ct9L1Ijy3qX2zq3Rf+lGjHMbrK8SUa2jQCdWB8RCo4pktb97WJ1JkxhJdC7tPSLlgQ2htJIH8wyKCB6bgMR6g==";
-      };
+      outputHash = "986e171f91cedd913800b4f272f9c22258a15bc8f44d2426630dc68d98281614004d4da1a8aec7a70a6171056425a95828cd68d8433b89d0e16ed973507ecccf";
       shouldBeUnplugged = true;
       flatName = "node-gyp";
       languageName = "node";
@@ -7635,10 +7576,7 @@ let
       reference = "patch:open@npm%3A8.4.0#.yarn/patches/open-npm-8.4.0-df63cfe537::version=8.4.0&hash=68ae10&locator=root-workspace-0b6124%40workspace%3A.";
       linkType = "HARD";
       outputName = "open-8.4.0-560cd90f93";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-fhLJ778B2/lZjzfKYzt1dFk4OzenM2MFEiGhy4a4fjVJM7OLL4YzBLWaS64NUtWcWa+5ULvlSOyA9KliBgPa3A==";
-        "x86_64-linux" = "sha512-fhLJ778B2/lZjzfKYzt1dFk4OzenM2MFEiGhy4a4fjVJM7OLL4YzBLWaS64NUtWcWa+5ULvlSOyA9KliBgPa3A==";
-      };
+      outputHash = "487717975d082b4ccc5b1bd1f92b6d4e509ba2d712c7df9c176e054cbd8fcc18c5d1a31a7f1b2f46d79d8d84569e258d51807fe06435c8b45c2b8423989fa3ba";
       src = ./.yarn/patches/open-npm-8.4.0-df63cfe537;
       shouldBeUnplugged = true;
       flatName = "open";
@@ -8500,7 +8438,7 @@ let
       reference = "patch:resolve@npm%3A1.22.1#optional!builtin<compat/resolve>::version=1.22.1&hash=c3c19d";
       linkType = "HARD";
       outputName = "resolve-1.22.1-61fc5136ce";
-      outputHash = "551dd500765cce767c583747f5f21ceb51d437f539b01aee96d6ec39eb2c68a8ff5d646b083d690fe428a81329856bc1bbdb094379b8df4b3f10e7e1f6aa3839";
+      outputHash = "a6f214b97d932445796f78dab7a898ec78966327e0d6cb571f90b6ac0f3b3347bf6bab0a071d899bfdc316b26ed845f6655310b38b8f6ee4da5272a0c5ecef85";
       flatName = "resolve";
       languageName = "node";
       scope = null;
@@ -8723,10 +8661,7 @@ let
       reference = "npm:0.31.1";
       linkType = "HARD";
       outputName = "sharp-0.31.1-5baac7078b";
-      outputHashByPlatform = {
-        "aarch64-darwin" = "sha512-5DMQOkRDmf0tbAgvGSEikgINATLcRm8WKkaLyp1XOurtG0LIMJUlz8mB5E2cNpFuigLIrr7LrK+mtaUL/QSxkQ==";
-        "x86_64-linux" = "sha512-jirTC3XTIyBYEe1l9IgSr8S4zkkl6YvRNaqeQk1itXmbibRfk0KxziApSAmNByf+y0Z9vmMPmnJpr6OE3PODOg==";
-      };
+      outputHash = "fcf08cca4fa8ef7ddecac4ddacfc7be0012d5ac3c9479b39cb6130107cf13a0aad1a84cd78468d4d4118cadce1e4102adf96b544e8d3a5ef784c04853915a876";
       shouldBeUnplugged = true;
       flatName = "sharp";
       languageName = "node";
@@ -9892,12 +9827,12 @@ let
       reference = "patch:typescript@npm%3A4.8.4#optional!builtin<compat/typescript>::version=4.8.4&hash=1a91c8";
       linkType = "HARD";
       outputName = "typescript-4.8.4-14bc8df10f";
-      outputHash = "5d81fd8cf5152091a0c0b84ebc868de8433583072a340c4899e0fc7ad6a80314b880a1466868c9a6a1f640c3d1f2fe7f41f8c541b99d78c8b414263dfa27eba3";
+      outputHash = "f6e45be090c6971bf57d07481cb7bd896303ffaee35b5a52a3418908d3cd252b20f5d25b5b1ebaf5c52754f9802421542b4aa70093744cb6d6b306936b5053bb";
       flatName = "typescript";
       languageName = "node";
       scope = null;
       descriptorRange = "patch:typescript@npm%3A^4.8.4#optional!builtin<compat/typescript>";
-      checksum = "10/5d81fd8cf5152091a0c0b84ebc868de8433583072a340c4899e0fc7ad6a80314b880a1466868c9a6a1f640c3d1f2fe7f41f8c541b99d78c8b414263dfa27eba3";
+      checksum = "9/f6e45be090c6971bf57d07481cb7bd896303ffaee35b5a52a3418908d3cd252b20f5d25b5b1ebaf5c52754f9802421542b4aa70093744cb6d6b306936b5053bb";
       bin = {
         "tsc" = "bin/tsc";
         "tsserver" = "bin/tsserver";

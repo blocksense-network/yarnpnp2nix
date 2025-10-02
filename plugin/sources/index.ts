@@ -1,6 +1,3 @@
-import {Plugin} from '@yarnpkg/core';
-import {BaseCommand} from '@yarnpkg/cli';
-import {Option} from 'clipanion';
 import { execa, execaSync } from 'execa';
 import PackCommand from './PackCommand'
 
@@ -54,14 +51,14 @@ export async function getExistingYarnManifest(manifestPath: string) {
   }
 }
 
-const { Configuration, Project, Workspace, Cache, StreamReport, Manifest, tgzUtils, structUtils, miscUtils, scriptUtils } = require("@yarnpkg/core")
-const { BaseCommand } = require('@yarnpkg/cli')
-const { xfs, CwdFS, PortablePath, VirtualFS } = require('@yarnpkg/fslib')
-const { ZipOpenFS } = require('@yarnpkg/libzip')
-const { getPnpPath, pnpUtils } = require('@yarnpkg/plugin-pnp')
-const { fileUtils } = require('@yarnpkg/plugin-file')
-const { Option } = require('clipanion')
-const t = require('typanion')
+import { Configuration, Project, Cache, StreamReport, Manifest, tgzUtils, hashUtils, structUtils, miscUtils, scriptUtils, Workspace } from "@yarnpkg/core";
+import { BaseCommand } from '@yarnpkg/cli';
+import { xfs, CwdFS, PortablePath, VirtualFS } from '@yarnpkg/fslib';
+import { ZipOpenFS } from '@yarnpkg/libzip';
+import { getPnpPath, pnpUtils } from '@yarnpkg/plugin-pnp';
+import { fileUtils } from '@yarnpkg/plugin-file';
+import { Option } from 'clipanion';
+import t = require('typanion');
 
 class FetchCommand extends BaseCommand {
   static paths = [['nix', 'fetch-by-locator']]
@@ -420,11 +417,11 @@ class RunBuildScriptsCommand extends BaseCommand {
 
 export default {
   hooks: {
-    afterAllInstalled: async (project, opts) => {
+    afterAllInstalled: async (project: Project, opts) => {
       const linkers = project.configuration.getLinkers();
       const linkerOptions = {project, report: null};
 
-      const existingManifest = await getExistingYarnManifest(path.join(project.cwd, 'yarn-manifest.nix'))
+      // const existingManifest = await getExistingYarnManifest(path.join(project.cwd, 'yarn-manifest.nix'))
 
       const installers = new Map(linkers.map(linker => {
         const installer = linker.makeInstaller(linkerOptions);
@@ -436,6 +433,9 @@ export default {
 
         return [linker, installer] as [Linker, Installer];
       }));
+
+      const cache = await Cache.find(project.configuration);
+
 
       const fetcher = project.configuration.makeFetcher();
       const fetchOptions = { checksums: new Map(), project, cache: null, fetcher, report: null }
@@ -605,10 +605,10 @@ export default {
 
         const manifestPackageId = structUtils.stringifyIdent(pkg) + '@' + pkg.reference
 
-        const packageInExistingManifest = existingManifest?.[manifestPackageId]
+        // const packageInExistingManifest = existingManifest?.[manifestPackageId]
 
-        let outputHash = packageInExistingManifest?.outputHash
-        let outputHashByPlatform: any = packageInExistingManifest?.outputHashByPlatform ?? {}
+        let outputHash = null
+        let outputHashByPlatform: any = null
 
         await (async function() {
           if (src != null && !isSourcePatch) {
@@ -627,32 +627,42 @@ export default {
             outputHashByPlatform = null
             return
           } else if (shouldBeUnplugged) {
-            const shouldHashBePlatformSpecific = true // TODO only if package or dependencies have platform conditions maybe?
-            if (shouldHashBePlatformSpecific) {
-              if (outputHashByPlatform[nixCurrentSystem()] && !isSourcePatch) {
-                // got existing hash for this platform in the manifest, use existing hash
-                outputHash = null
-                return
-              } else {
-                const unplugPath = pnpUtils.getUnpluggedPath(pkg, {configuration: project.configuration});
-                if (unplugPath != null && await xfs.existsPromise(unplugPath)) {
-                  // console.log('fetching hash for', unplugPath)
-                  const res = await execaSync('nix', ['hash', 'path', '--type', 'sha512', unplugPath])
-                  if (res.stdout != null) {
-                    outputHash = null
-                    if (!outputHashByPlatform) outputHashByPlatform = {}
-                    outputHashByPlatform[nixCurrentSystem()] = res.stdout
-                    return
-                  }
-                } else {
-                  // leave as is? to avoid removing hashes from incompatible platforms
-                  if (Object.keys(outputHashByPlatform).length > 0 && outputHash == null) {
-                    return
-                  }
-                }
+
+            // const shouldHashBePlatformSpecific = true // TODO only if package or dependencies have platform conditions maybe?
+            // if (shouldHashBePlatformSpecific) {
+            //   if (outputHashByPlatform[nixCurrentSystem()] && !isSourcePatch) {
+            //     // got existing hash for this platform in the manifest, use existing hash
+            //     outputHash = null
+            //     return
+            //   } else {
+            //     const unplugPath = pnpUtils.getUnpluggedPath(pkg, {configuration: project.configuration});
+            //     if (unplugPath != null && await xfs.existsPromise(unplugPath)) {
+            //       // console.log('fetching hash for', unplugPath)
+            //       const res = await execaSync('nix', ['hash', 'path', '--type', 'sha512', unplugPath])
+            //       if (res.stdout != null) {
+            //         outputHash = null
+            //         if (!outputHashByPlatform) outputHashByPlatform = {}
+            //         outputHashByPlatform[nixCurrentSystem()] = res.stdout
+            //         return
+            //       }
+            //     } else {
+            //       // leave as is? to avoid removing hashes from incompatible platforms
+            //       if (Object.keys(outputHashByPlatform).length > 0 && outputHash == null) {
+            //         return
+            //       }
+            //     }
+            //   }
+            // }
+            outputHash = project.storedChecksums.get(pkg.locatorHash)?.substring(2)
+            if (!outputHash) {
+              console.log('got package unplugged package with no hash', pkg)
+              try {
+                const cachePath = cache.getLocatorPath(pkg, null)
+                outputHash = await hashUtils.checksumFile(cachePath)
+              } catch (error) {
+                console.log('error getting outputHash', error.message)
               }
             }
-            outputHash = ''
             outputHashByPlatform = null
             return
           } else {
@@ -743,8 +753,19 @@ export default {
             }
             manifestNix.push(`      };`)
           }
-          if (pkg.src)
-            manifestNix.push(`      src = ${pkg.src};`)
+          if (pkg.src) {
+            const storeForbiddenCharacterRegexp = /[^a-zA-Z0-9/+.=_-]/g;
+            // Is the src a valid path that can be copied to the store? If not, escape the path by interpolating it as a string, and use `builtins.path` to replace the illegal characters by `__`.
+            const nixPathExpr =
+              storeForbiddenCharacterRegexp.test(pkg.src)
+              ? `builtins.path { name = "${
+                path.basename(pkg.src).replace(storeForbiddenCharacterRegexp, "__")
+              }"; path = ./\${"${
+                pkg.src.replace(/"/g, '\\"')
+              }"}; }`
+              : pkg.src
+            manifestNix.push(`      src = ${nixPathExpr};`)
+          }
           if (pkg.shouldBeUnplugged)
             manifestNix.push(`      shouldBeUnplugged = ${pkg.shouldBeUnplugged};`)
           if (pkg.installCondition)
@@ -797,7 +818,8 @@ export default {
         for (const pkg of packageRegistryPackages) {
           if (pkg.canonicalReference.startsWith('workspace:')) {
             if (pkg.drvPath !== '/dev/null' && pkg.drvPath !== process.env.out) {
-              const workspace = new Workspace(pkg.packageLocation ?? path.join(pkg.drvPath, 'node_modules', pkg.name), { project })
+              const workspaceCwd = pkg.packageLocation ?? path.join(pkg.drvPath, 'node_modules', pkg.name)
+              const workspace = new Workspace(workspaceCwd, { project })
               await workspace.setup()
               await project.addWorkspace(workspace)
             }
