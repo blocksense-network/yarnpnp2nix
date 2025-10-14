@@ -51,7 +51,7 @@ export async function getExistingYarnManifest(manifestPath: string) {
   }
 }
 
-import { Configuration, Project, Cache, StreamReport, Manifest, tgzUtils, hashUtils, structUtils, miscUtils, scriptUtils, Workspace } from "@yarnpkg/core";
+import { Configuration, Project, Cache, StreamReport, Manifest, tgzUtils, hashUtils, structUtils, miscUtils, scriptUtils, Workspace, SettingsType } from "@yarnpkg/core";
 import { BaseCommand } from '@yarnpkg/cli';
 import { xfs, CwdFS, PortablePath, VirtualFS } from '@yarnpkg/fslib';
 import { ZipOpenFS } from '@yarnpkg/libzip';
@@ -497,10 +497,27 @@ class RunBuildScriptsCommand extends BaseCommand {
 }
 
 export default {
+  configuration: {
+    // Preferred way to select output path (including filename)
+    yarnpnp2nixManifestPath: {
+      description: 'File path for the generated manifest (relative to project root or absolute).',
+      type: SettingsType.STRING,
+      default: 'yarn-manifest.nix',
+    },
+  },
   hooks: {
     afterAllInstalled: async (project: Project, opts) => {
       const linkers = project.configuration.getLinkers();
       const linkerOptions = {project, report: null};
+
+      // Resolve output manifest absolute path and compute relative prefix from manifest to project root
+      const manifestPathFromConfig = project.configuration.get('yarnpnp2nixManifestPath') as string | undefined
+      const manifestPathSetting: string = (manifestPathFromConfig && manifestPathFromConfig.trim() !== '') ? manifestPathFromConfig : 'yarn-manifest.nix'
+
+      const outManifestPathAbs = path.isAbsolute(manifestPathSetting) ? manifestPathSetting : path.join(project.cwd, manifestPathSetting)
+      const outManifestDirAbs = path.dirname(outManifestPathAbs)
+      const relFromManifestToProjectRootRaw = path.relative(outManifestDirAbs, project.cwd)
+      const relFromManifestToProjectRoot = relFromManifestToProjectRootRaw === '' ? '.' : relFromManifestToProjectRootRaw.replace(/\\/g, '/')
 
       // const existingManifest = await getExistingYarnManifest(path.join(project.cwd, 'yarn-manifest.nix'))
 
@@ -814,15 +831,20 @@ export default {
           }
           if (pkg.src) {
             const storeForbiddenCharacterRegexp = /[^a-zA-Z0-9/+.=_-]/g;
-            // Is the src a valid path that can be copied to the store? If not, escape the path by interpolating it as a string, and use `builtins.path` to replace the illegal characters by `__`.
+            // Adjust the src path so it resolves correctly relative to the manifest location
+            const srcNoDot = pkg.src.startsWith('./') ? pkg.src.substring(2) : pkg.src
+            const relPrefix = relFromManifestToProjectRoot === '.' ? '' : relFromManifestToProjectRoot
+            const adjustedRelPosix = (relPrefix ? (relPrefix + '/' + srcNoDot) : srcNoDot).replace(/\\/g, '/')
+
+            // If the src has characters not allowed by Nix path literals, use builtins.path with an interpolated relative path
             const nixPathExpr =
-              storeForbiddenCharacterRegexp.test(pkg.src)
+              storeForbiddenCharacterRegexp.test(srcNoDot)
               ? `builtins.path { name = "${
-                path.basename(pkg.src).replace(storeForbiddenCharacterRegexp, "__")
+                path.basename(srcNoDot).replace(storeForbiddenCharacterRegexp, "__")
               }"; path = ./\${"${
-                pkg.src.replace(/"/g, '\\"')
+                adjustedRelPosix.replace(/\"/g, '\\"')
               }"}; }`
-              : pkg.src
+              : `./${adjustedRelPosix}`
             manifestNix.push(`      src = ${nixPathExpr};`)
           }
           if (pkg.shouldBeUnplugged)
@@ -866,7 +888,8 @@ export default {
       manifestNix.push('{ inherit packages; inherit settings; }')
       manifestNix.push('')
 
-      fs.writeFileSync(path.join(project.cwd, 'yarn-manifest.nix'), manifestNix.join('\n'), 'utf8')
+      fs.mkdirSync(outManifestDirAbs, { recursive: true })
+      fs.writeFileSync(outManifestPathAbs, manifestNix.join('\n'), 'utf8')
     },
     populateYarnPaths: async (project: Project) => {
       const packageRegistryDataPath = process.env.YARNNIX_PACKAGE_REGISTRY_DATA_PATH
