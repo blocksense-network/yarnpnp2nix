@@ -1,3 +1,2 @@
-console.log('will build')
-
-console.log('got react', require('react-old')) // foo
+// Test build script - verifies react-old alias works
+require('react-old')

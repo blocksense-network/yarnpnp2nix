@@ -97,6 +97,34 @@ class FetchCommand extends BaseCommand {
   }
 }
 
+const YARNNIX_DEBUG = process.env.YARNNIX_DEBUG === '1' || (process.env.DEBUG || '').includes('yarnpnp2nix')
+
+function hostMatchesPackageConditions(conditions?: string | null): boolean {
+  try {
+    if (!conditions) return true
+    // Very small parser for strings like: "os=linux & cpu=x64" (joined by &)
+    const parts = conditions.split('&').map(s => s.trim())
+    for (const part of parts) {
+      const [k, v] = part.split('=').map(s => s.trim())
+      if (!k || !v) continue
+      if (k === 'os') {
+        const map: Record<string, string> = { darwin: 'darwin', linux: 'linux', win32: 'win32', freebsd: 'freebsd', openbsd: 'openbsd', netbsd: 'netbsd', sunos: 'sunos', android: 'android' }
+        if ((map[process.platform] || process.platform) !== v) return false
+      } else if (k === 'cpu') {
+        const map: Record<string, string> = { x64: 'x64', ia32: 'ia32', arm64: 'arm64', arm: 'arm', ppc64: 'ppc64', s390x: 's390x', loong64: 'loong64', riscv64: 'riscv64' }
+        if ((map[process.arch] || process.arch) !== v) return false
+      } else if (k === 'libc') {
+        // Only check for musl vs glibc if requested; conservatively assume glibc on most systems
+        const libc = process.env.LIBC || 'glibc'
+        if (libc !== v) return false
+      }
+    }
+    return true
+  } catch {
+    return true
+  }
+}
+
 class CreateLockFileCommand extends BaseCommand {
   static paths = [['nix', 'create-lockfile']]
 
@@ -264,12 +292,43 @@ class GeneratePnpFile extends BaseCommand {
         }
       }
 
-      const packageLocationAbs = pkg.packageLocation ?? (pkg.drvPath + '/node_modules/' + pkg.name)
-      const relativePackageLocation = path.relative(outDirectoryReal, packageLocationAbs)
-      let packageLocation = (relativePackageLocation.startsWith('../') ? relativePackageLocation : ('./' + relativePackageLocation)) + '/'
-
+      // For virtual packages in Nix environment, use the canonical package's location
+      // because virtual packages are not built as separate derivations, they use the canonical package
+      let packageLocation: string
       if (isVirtual) {
-        packageLocation = './' + path.relative(this.outDirectory, VirtualFS.makeVirtualPath(path.join(this.outDirectory, './.yarn/__virtual__'), structUtils.slugifyLocator(locator), packageLocationAbs)) + '/'
+        // For virtual packages, check if they have a canonicalPackage reference
+        // This is more reliable than trying to find by devirtualized key
+        if (pkg.canonicalPackage) {
+          // Use the canonical package's location from the manifest
+          const canonicalPackageLocationAbs = pkg.canonicalPackage.packageLocation ??
+            (pkg.canonicalPackage.drvPath + '/node_modules/' + pkg.canonicalPackage.name)
+          const relativeCanonicalPackageLocation = path.relative(outDirectoryReal, canonicalPackageLocationAbs)
+          packageLocation = (relativeCanonicalPackageLocation.startsWith('../') ? relativeCanonicalPackageLocation : ('./' + relativeCanonicalPackageLocation)) + '/'
+        } else {
+          // Fallback: try to find canonical package by devirtualizing
+          const canonicalLocator = structUtils.devirtualizeLocator(locator)
+          const canonicalPackageKey = `${structUtils.stringifyIdent(canonicalLocator)}@${canonicalLocator.reference}`
+          const canonicalPackage = packageRegistryData[canonicalPackageKey]
+
+          if (canonicalPackage) {
+            const canonicalPackageLocationAbs = canonicalPackage.packageLocation ?? (canonicalPackage.drvPath + '/node_modules/' + canonicalPackage.name)
+            const relativeCanonicalPackageLocation = path.relative(outDirectoryReal, canonicalPackageLocationAbs)
+            packageLocation = (relativeCanonicalPackageLocation.startsWith('../') ? relativeCanonicalPackageLocation : ('./' + relativeCanonicalPackageLocation)) + '/'
+          } else {
+            // Final fallback: use the virtual package's own location
+            // This can happen when packages only exist as virtual packages due to peer dependency resolution
+            if (YARNNIX_DEBUG) {
+              console.warn(`Warning: Cannot find canonical package ${canonicalPackageKey} for virtual package ${pkg.name}@${pkg.reference}, using virtual package location as fallback`)
+            }
+            const packageLocationAbs = pkg.packageLocation ?? (pkg.drvPath + '/node_modules/' + pkg.name)
+            const relativePackageLocation = path.relative(outDirectoryReal, packageLocationAbs)
+            packageLocation = (relativePackageLocation.startsWith('../') ? relativePackageLocation : ('./' + relativePackageLocation)) + '/'
+          }
+        }
+      } else {
+        const packageLocationAbs = pkg.packageLocation ?? (pkg.drvPath + '/node_modules/' + pkg.name)
+        const relativePackageLocation = path.relative(outDirectoryReal, packageLocationAbs)
+        packageLocation = (relativePackageLocation.startsWith('../') ? relativePackageLocation : ('./' + relativePackageLocation)) + '/'
       }
 
       const packageData = {
@@ -296,6 +355,31 @@ class GeneratePnpFile extends BaseCommand {
 
     if (topLevelPackage != null) {
       miscUtils.getMapWithDefault(packageRegistry, null).set(null, topLevelPackage);
+
+      // For workspace packages being built, add an entry for workspace:. resolution
+      // This allows the build scripts to resolve the current package when running from its directory
+      const topLevelPkgData = packageRegistryData[this.topLevelPackageLocator]
+      if (topLevelPkgData && topLevelPkgData.reference && topLevelPkgData.reference.startsWith('workspace:')) {
+        // Add an entry for @package-name@workspace:. that points to the same package data
+        // This allows resolution when the build runs from within the package directory
+        const workspaceDotReference = 'workspace:.'
+        const workspaceDotLocator = `${topLevelPkgData.name}@${workspaceDotReference}`
+
+        // Create a modified package data that uses workspace:. as the reference
+        const workspaceDotPackageData = {
+          ...topLevelPackage,
+          packageLocation: './', // Current directory since we're building from within the package
+        }
+
+        // Add this entry to the package registry
+        miscUtils.getMapWithDefault(packageRegistry, topLevelPkgData.name).set(workspaceDotReference, workspaceDotPackageData)
+
+        // Also add to dependencyTreeRoots if it's a workspace package
+        dependencyTreeRoots.push({
+          name: topLevelPkgData.name,
+          reference: workspaceDotReference,
+        })
+      }
     } else {
       throw new Error('Could not determine topLevelPackage, this is NEEDED for the .pnp.cjs to be correctly generated')
     }
@@ -381,12 +465,9 @@ class RunBuildScriptsCommand extends BaseCommand {
 
     project.cwd = this.pnpRootDirectory
 
-    // need to find a way to make this work without restoring install state...
-    // await project.restoreInstallState({
-      //   restoreResolutions: true,
-      // });
+    // Note: We use originalPackages directly without restoring install state
+    // This works because we're just reading package information, not modifying it
     project.storedPackages = project.originalPackages
-    // next thing to fix is "couldn't find XXX in the currently installed PnP map"
 
     const manifest = await ZipOpenFS.openPromise(async (zipOpenFs) => {
       const linkers = project.configuration.getLinkers();
@@ -564,13 +645,9 @@ export default {
           let resolvedPkg = resolutionHash != null ? project.storedPackages.get(resolutionHash) :
             null
           if (!resolvedPkg) {
-            console.log('failed to resolve', value)
+            // Skip unresolved packages (can happen with optional dependencies)
             return null
           }
-          // reference virtual packages instead so that peerDependencies are respected
-          // if (structUtils.isVirtualLocator(resolvedPkg)) {
-          //   resolvedPkg = structUtils.devirtualizeLocator(resolvedPkg)
-          // }
           return {
             key,
             name: structUtils.stringifyIdent(value),
@@ -583,13 +660,9 @@ export default {
           let resolvedPkg = resolutionHash != null ? project.storedPackages.get(resolutionHash) :
             null
           if (!resolvedPkg) {
-            console.log('failed to resolve', value)
+            // Skip unresolved packages (can happen with optional dependencies)
             return null
           }
-          // reference virtual packages instead so that peerDependencies are respected
-          // if (structUtils.isVirtualLocator(resolvedPkg)) {
-          //   resolvedPkg = structUtils.devirtualizeLocator(resolvedPkg)
-          // }
           return {
             key,
             name: structUtils.stringifyIdent(value),
@@ -599,7 +672,9 @@ export default {
 
         const packagePeers = []
 
-        for (const descriptor of pkg.peerDependencies.values()) {
+        // For virtual packages, get peer dependencies from the canonical package
+        const peerDependencySource = isVirtual ? canonicalPackage : pkg
+        for (const descriptor of peerDependencySource.peerDependencies.values()) {
           packagePeers.push(structUtils.stringifyIdent(descriptor));
         }
 
@@ -620,47 +695,29 @@ export default {
             // simple, use the hash of the zip file
             const checksum = project.storedChecksums.get(pkg.locatorHash)
             if (checksum != null) {
-              outputHash = checksum.substring(checksum.indexOf('/') + 1) // first 2-3 characters before slash are like a checksum version that yarn uses, we can discard
+              // Remove version prefix (e.g., "10/", "c0/", "10c0/", etc.) - everything before and including the last slash
+              outputHash = checksum.includes('/') ? checksum.substring(checksum.lastIndexOf('/') + 1) : checksum
             } else {
               outputHash = null
             }
             outputHashByPlatform = null
             return
           } else if (shouldBeUnplugged) {
-
-            // const shouldHashBePlatformSpecific = true // TODO only if package or dependencies have platform conditions maybe?
-            // if (shouldHashBePlatformSpecific) {
-            //   if (outputHashByPlatform[nixCurrentSystem()] && !isSourcePatch) {
-            //     // got existing hash for this platform in the manifest, use existing hash
-            //     outputHash = null
-            //     return
-            //   } else {
-            //     const unplugPath = pnpUtils.getUnpluggedPath(pkg, {configuration: project.configuration});
-            //     if (unplugPath != null && await xfs.existsPromise(unplugPath)) {
-            //       // console.log('fetching hash for', unplugPath)
-            //       const res = await execaSync('nix', ['hash', 'path', '--type', 'sha512', unplugPath])
-            //       if (res.stdout != null) {
-            //         outputHash = null
-            //         if (!outputHashByPlatform) outputHashByPlatform = {}
-            //         outputHashByPlatform[nixCurrentSystem()] = res.stdout
-            //         return
-            //       }
-            //     } else {
-            //       // leave as is? to avoid removing hashes from incompatible platforms
-            //       if (Object.keys(outputHashByPlatform).length > 0 && outputHash == null) {
-            //         return
-            //       }
-            //     }
-            //   }
-            // }
-            outputHash = project.storedChecksums.get(pkg.locatorHash)?.substring(2)
+            // Package needs to be unplugged (native modules, etc.)
+            const checksum = project.storedChecksums.get(pkg.locatorHash);
+            // Remove version prefix (e.g., "10/", "c0/", "10c0/", etc.) - everything before and including the last slash
+            outputHash = checksum && checksum.includes('/') ? checksum.substring(checksum.lastIndexOf('/') + 1) : checksum;
             if (!outputHash) {
-              console.log('got package unplugged package with no hash', pkg)
-              try {
-                const cachePath = cache.getLocatorPath(pkg, null)
-                outputHash = await hashUtils.checksumFile(cachePath)
-              } catch (error) {
-                console.log('error getting outputHash', error.message)
+              // Skip attempting to hash platform-incompatible prebuilt packages (noisy and not needed)
+              if (!hostMatchesPackageConditions((pkg as any).conditions)) {
+                if (YARNNIX_DEBUG) console.warn('skip hashing incompatible package', pkg.name, pkg.reference)
+              } else {
+                try {
+                  const cachePath = cache.getLocatorPath(pkg as any, null)
+                  outputHash = await hashUtils.checksumFile(cachePath)
+                } catch (error: any) {
+                  if (YARNNIX_DEBUG) console.warn('error getting outputHash', error?.message)
+                }
               }
             }
             outputHashByPlatform = null
@@ -674,7 +731,9 @@ export default {
 
         const descriptorHash = getByValue(project.storedResolutions, pkg.locatorHash)
         const descriptor = project.storedDescriptors.get(descriptorHash)
-        const yarnChecksum = project.storedChecksums.get(pkg.locatorHash)
+        const rawChecksum = project.storedChecksums.get(pkg.locatorHash)
+        // Normalize checksum by removing version prefixes like "10c0/", "c0/", etc.
+        const yarnChecksum = rawChecksum && rawChecksum.includes('/') ? rawChecksum.substring(rawChecksum.lastIndexOf('/') + 1) : rawChecksum
 
         packageManifest[manifestPackageId] = {
           isVirtual,
@@ -791,7 +850,7 @@ export default {
         writeDependencies('dependencies', pkg.dependencies)
         writeDependencies('devDependencies', pkg.devDependencies)
 
-        if (!pkg.isVirtual && pkg.packagePeers && pkg.packagePeers.length > 0) {
+        if (pkg.packagePeers && pkg.packagePeers.length > 0) {
           manifestNix.push(`      packagePeers = [`)
           for (const peer of pkg.packagePeers) {
             manifestNix.push(`        ${JSON.stringify(peer)}`)

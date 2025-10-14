@@ -14,6 +14,7 @@
       sharedOverlays = [ yarnpnp2nix.overlays.default ];
       outputsBuilder = channels:
       let
+        inherit (nixpkgs) lib;
         pkgs = channels.nixpkgs;
         mkYarnPackagesFromManifest = yarnpnp2nix.lib."${pkgs.stdenv.system}".mkYarnPackagesFromManifest;
         yarnPackages = mkYarnPackagesFromManifest {
@@ -32,16 +33,32 @@
             #   npm ERR! `nodedir` is not a valid npm option
             # so we use the env var as described in:
             #   https://github.com/nodejs/node-gyp#environment-variables
-            preInstallScript = "export npm_config_nodedir=${pkgs.nodejs}";
+            preInstallScript = ''
+              export PATH=${pkgs.python311}/bin:$PATH
+              export npm_config_nodedir=${pkgs.nodejs}
+              export npm_config_python=${lib.getExe pkgs.python311}
+              export PYTHON=${lib.getExe pkgs.python311}
+            '';
             buildInputs = with pkgs; ([
               autoconf zlib gcc automake pkg-config libtool file
-              python3
+              python311
               pixman cairo pango libpng libjpeg giflib librsvg libwebp libuuid
             ] ++ (if pkgs.stdenv.isDarwin then [ darwin.apple_sdk.frameworks.CoreText ] else []));
+            # Build against default Node (Node 22), using Python 3.11 for node-gyp
           };
-          "sharp@npm:0.31.1" = {
-            preInstallScript = "export npm_config_nodedir=${pkgs.nodejs}";
-            buildInputs = with pkgs; [pkg-config vips nodejs.python];
+          "canvas@npm:2.11.2" = {
+            # Build against Node 22 with Python 3.11 for node-gyp
+            preInstallScript = ''
+              export PATH=${pkgs.python311}/bin:$PATH
+              export npm_config_nodedir=${pkgs.nodejs}
+              export npm_config_python=${lib.getExe pkgs.python311}
+              export PYTHON=${lib.getExe pkgs.python311}
+            '';
+            buildInputs = with pkgs; ([
+              autoconf zlib gcc automake pkg-config libtool file
+              python311
+              pixman cairo pango libpng libjpeg giflib librsvg libwebp libuuid
+            ] ++ (if pkgs.stdenv.isDarwin then [ darwin.apple_sdk.frameworks.CoreText ] else []));
           };
           "testa@workspace:packages/testa" = {
             filterDependencies = dep: dep != "color" && dep != "testf";
@@ -61,6 +78,24 @@
           "anymatch@npm:3.1.2" = {
             shouldBeUnplugged = true;
           };
+          "sharp@npm:0.31.3" = {
+            shouldBeUnplugged = true;
+            # Sharp needs to be built from source in Nix environment
+            # as it can't download prebuilt binaries in sandboxed build
+            preInstallScript = ''
+              export npm_config_sharp_binary_host=OFF
+              export npm_config_sharp_libvips_binary_host=OFF
+              export npm_config_build_from_source=true
+              export npm_config_nodedir=${pkgs.nodejs}
+              export PATH=${pkgs.python311}/bin:$PATH
+              export npm_config_python=${lib.getExe pkgs.python311}
+              export PYTHON=${lib.getExe pkgs.python311}
+            '';
+            buildInputs = with pkgs; [
+              autoconf automake gcc pkg-config libtool file
+              python311 vips glib
+            ] ++ (if pkgs.stdenv.isDarwin then [ darwin.apple_sdk.frameworks.CoreText ] else []);
+          };
         };
         allYarnPackages = builtins.attrValues yarnPackages;
 
@@ -72,8 +107,7 @@
           testa = yarnPackages."testa@workspace:packages/testa";
           testb = yarnPackages."testb@workspace:packages/testb";
           teste = yarnPackages."teste@workspace:packages/teste";
-          sharp = yarnPackages."sharp@npm:0.31.1";
-          canvas = yarnPackages."canvas@npm:2.10.1";
+          canvas = yarnPackages."canvas@npm:2.11.2";
           open = yarnPackages."open@patch:open@npm%3A8.4.0#.yarn/patches/open-npm-8.4.0-df63cfe537::version=8.4.0&hash=caabd2&locator=root-workspace-0b6124%40workspace%3A.";
           test-tgz = yarnPackages."test-tgz-redux-saga-core@file:../../localPackageTests/test-tgz-redux-saga-core.tgz#../../localPackageTests/test-tgz-redux-saga-core.tgz::hash=b2ff7c&locator=testb%40workspace%3Apackages%2Ftestb";
         };
@@ -95,7 +129,7 @@
           packages = with pkgs; [
             nodejs
             yarnBerry
-          ] ++ packageOverrides."canvas@npm:2.10.1".buildInputs;
+          ] ++ packageOverrides."canvas@npm:2.11.2".buildInputs;
 
           # inputsFrom = builtins.filter (p: p.shouldBeUnplugged or false) allYarnPackages;
 

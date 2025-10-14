@@ -8,6 +8,10 @@ let
   setupYarnBinScript = { yarnManifestSettings }: ''
     export YARN_PLUGINS=${nixPlugin}
     export YARN_COMPRESSION_LEVEL="${toString (yarnManifestSettings.compressionLevel or 0)}"
+    # Ensure Node trusts the system CA bundle during HTTPS fetches
+    # This fixes TLS errors like "unable to get local issuer certificate"
+    export NODE_OPTIONS="${"\${NODE_OPTIONS:+$NODE_OPTIONS }"}--use-openssl-ca"
+    export NODE_EXTRA_CA_CERTS=${defaultPkgs.cacert}/etc/ssl/certs/ca-bundle.crt
   '';
 
   resolvePkg = pkg: if hasAttr "canonicalPackage" pkg then (
@@ -133,6 +137,18 @@ let
       ) else null;
       outputHash = if _platformOutputHash != null then _platformOutputHash else _outputHash;
 
+      # Some manifests may still have hashes with leading '/' due to previous bugs.
+      # This normalization will be removed once all manifests are regenerated.
+      normalizedOutputHash =
+        if outputHash == null then null else
+        let
+          oh = outputHash;
+        in
+          if builtins.substring 0 1 oh == "/"
+          then builtins.substring 1 (builtins.stringLength oh - 1) oh
+          else oh;
+
+
       isSourceTgz = src != null && (last (splitString "." src)) == "tgz";
       isSourcePatch = src != null && (substring 0 6 reference) == "patch:";
 
@@ -232,6 +248,7 @@ let
 
         buildInputs = with pkgs; [
           defaultPkgs.yarnBerry
+          cacert
           unzip
         ];
 
@@ -269,7 +286,7 @@ let
           xcbuild
         ] else [])
         ++ buildInputs;
- 
+
         fetchPhase =
           if willFetch then ''
             tmpDir=$PWD
@@ -282,7 +299,7 @@ let
             else if isSourceTgz then "yarn nix convert-to-zip ${locatorToFetchJSON} ${src} $tmpDir/output.zip"
             else ""}
           '' else " ";
- 
+
         buildPhase =
           if willBuild then ''
             tmpDir=$PWD
@@ -301,6 +318,14 @@ let
 
             mkdir -p $tmpDir/wrappedbins
             yarn nix make-path-wrappers $tmpDir/wrappedbins $out $tmpDir/packageRegistryData.json "${locatorString}"
+
+            # For workspace packages, create symlinks to PnP files in the package directory
+            # This allows yarn commands in the build script to work properly
+            ${if (substring 0 10 reference) == "workspace:" then ''
+              ln -s $out/.pnp.cjs $packageLocation/.pnp.cjs
+              ln -s $out/.pnp.loader.mjs $packageLocation/.pnp.loader.mjs
+              cp $tmpDir/yarn.lock $packageLocation/yarn.lock
+            '' else ""}
 
             cd $packageLocation
             nodeOptions="--require $out/.pnp.cjs --loader $out/.pnp.loader.mjs"
@@ -351,7 +376,7 @@ let
             echo ${name}
             ${if willFetch
               then ''
-                pkg_src=${makeFetchOnlyDerivation outputHash}
+                pkg_src=${makeFetchOnlyDerivation normalizedOutputHash}
                 ${setupYarnBinScript { inherit yarnManifestSettings; }}
                 touch yarn.lock
                 ''
